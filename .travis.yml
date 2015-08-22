@@ -21,4 +21,4 @@ before_install:
 
 env:
   global:
- - secure: "gc9tt4NqrBIADv3Mq7fjxSVePZd5i4ytSC9g7EsHckRYMfqBalTBzTqbGzesLEbsCwqGX0btSY8yc68VCukI5mP4jOWLDnOt63W0CzF0Ie3NVAQAeJZstXgy2u5y4mWd2Pm/RYWJxQchoFL6CpuQcEfuFgE9wnpOhLfwDdYU/Y8="
+  - secure: "gc9tt4NqrBIADv3Mq7fjxSVePZd5i4ytSC9g7EsHckRYMfqBalTBzTqbGzesLEbsCwqGX0btSY8yc68VCukI5mP4jOWLDnOt63W0CzF0Ie3NVAQAeJZstXgy2u5y4mWd2Pm/RYWJxQchoFL6CpuQcEfuFgE9wnpOhLfwDdYU/Y8="
