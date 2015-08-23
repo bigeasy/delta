@@ -25,7 +25,7 @@ Delta.prototype.ee = function (ee) {
     this._listeners.push({
         ee: ee,
         name: 'error',
-        listener: rescuer.listener,
+        callback: rescuer,
         heap: rescuers
     })
     return new Constructor(this, ee)
@@ -34,8 +34,8 @@ Delta.prototype.ee = function (ee) {
 Delta.prototype._unlisten = function () {
     for (var i = 0, I = this._listeners.length; i < I; i++) {
         var listener = this._listeners[i]
-        listener.ee.removeListener(listener.name, listener.listener)
-        listener.heap.push(listener)
+        listener.ee.removeListener(listener.name, listener.callback.listener)
+        listener.heap.push(listener.callback)
     }
 }
 
@@ -82,7 +82,7 @@ Constructor.prototype.on = function (name, reaction) {
                 for (var i = 0, I = arguments.length; i < I; i++) {
                     vargs[i] = arguments[i]
                 }
-                callback.listener(vargs)
+                callback.action(vargs)
             }
         }
     }
@@ -95,9 +95,9 @@ Constructor.prototype.on = function (name, reaction) {
     } else if (typeof reaction == 'function') {
         callback.action = function (vargs) {
             try {
-                reaction(vargs)
+                reaction.apply(null, vargs)
             } catch (error) {
-                this._delta._rescue(error)
+                this.delta._rescue(error)
             }
         }
     } else {
@@ -110,7 +110,7 @@ Constructor.prototype.on = function (name, reaction) {
     this._delta._listeners.push({
         ee: this._ee,
         name: name,
-        listener: callback.listener,
+        callback: callback,
         heap: listeners
     })
     this._ee.on(name, callback.listener)
