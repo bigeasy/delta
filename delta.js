@@ -101,9 +101,9 @@ Constructor.prototype.on = function (name, reaction) {
             }
         }
     } else {
-        this._delta.results.push([])
-        this._delta.waiting++
-        callback.index = this._delta.results.length - 1
+        this._delta._results.push([])
+        this._delta._waiting++
+        callback.index = this._delta._results.length - 1
         callback.action = get
     }
 
@@ -113,7 +113,7 @@ Constructor.prototype.on = function (name, reaction) {
         listener: callback.listener,
         heap: listeners
     })
-    this._ee.on(name, callback.callback)
+    this._ee.on(name, callback.listener)
 }
 
 module.exports = Delta
