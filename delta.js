@@ -1,4 +1,4 @@
-var rescuers = [], listeners = []
+var rescuers = [], listeners = [], push = [].push
 
 function Delta (callback) {
     this._callback = callback
@@ -9,25 +9,6 @@ function Delta (callback) {
 }
 
 Delta.prototype.ee = function (ee) {
-    var rescuer = rescuers.pop()
-    if (rescuer == null) {
-        rescuer = {
-            delta: this,
-            listener: function (error) {
-                rescuer.delta._rescue(error)
-                rescuers.push(rescuer)
-            }
-        }
-    } else {
-        rescuer.delta = this
-    }
-    ee.on('error', rescuer.listener)
-    this._listeners.push({
-        ee: ee,
-        name: 'error',
-        callback: rescuer,
-        heap: rescuers
-    })
     return new Constructor(this, ee)
 }
 
@@ -45,9 +26,9 @@ Delta.prototype._rescue = function (error) {
 }
 
 Delta.prototype._complete = function () {
-    if (this._waiting == ++this._complete) {
+    if (this._waiting == ++this._completed) {
         this._unlisten()
-        var vargs = []
+        var vargs = [ null ]
         for (var i = 0, I = this._results.length; i < I; i++) {
             push.apply(vargs, this._results[i])
         }
@@ -56,17 +37,36 @@ Delta.prototype._complete = function () {
 }
 
 function Constructor (delta, ee) {
+    var rescuer = rescuers.pop()
+    if (rescuer == null) {
+        rescuer = {
+            delta: delta,
+            listener: function (error) {
+                rescuer.delta._rescue(error)
+                rescuers.push(rescuer)
+            }
+        }
+    } else {
+        rescuer.delta = delta
+    }
+    ee.on('error', rescuer.listener)
+    delta._listeners.push({
+        ee: ee,
+        name: 'error',
+        callback: rescuer,
+        heap: rescuers
+    })
     this._delta = delta
     this._ee = ee
 }
 
 function gather (vargs) {
-    push.apply(this._delta._results[this.index][0], vargs)
+    push.apply(this.delta._results[this.index][0], vargs)
 }
 
 function get (vargs) {
-    push.apply(this._delta._results[this.index], vargs)
-    this._delta._complete()
+    push.apply(this.delta._results[this.index], vargs)
+    this.delta._complete()
 }
 
 Constructor.prototype.on = function (name, reaction) {
@@ -90,7 +90,7 @@ Constructor.prototype.on = function (name, reaction) {
     callback.delta = this._delta
 
     if (Array.isArray(reaction)) {
-        this._delta.results.push([[]])
+        this._delta._results.push([[]])
         callback.action = gather
     } else if (typeof reaction == 'function') {
         callback.action = function (vargs) {
@@ -113,7 +113,14 @@ Constructor.prototype.on = function (name, reaction) {
         callback: callback,
         heap: listeners
     })
+
     this._ee.on(name, callback.listener)
+
+    return this
+}
+
+Constructor.prototype.ee = function (ee) {
+    return new Constructor(this._delta, ee)
 }
 
 module.exports = Delta

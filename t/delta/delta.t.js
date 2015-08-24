@@ -1,4 +1,4 @@
-require('proof')(4, prove)
+require('proof')(5, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
@@ -25,4 +25,18 @@ function prove (assert) {
     })
 
     ee.emit('wrap', 1)
+
+    var delta = new Delta(function (error, one, two, three) {
+        if (error) throw error
+        assert([ one, two, three ], [ [ 1, 2, 3 ], 2, 3 ], 'gathered')
+    })
+
+    delta.ee(new EventEmitter).ee(ee).on('data', []).on('end').on('signal')
+
+    ee.emit('data', 1)
+    ee.emit('data', 2)
+    ee.emit('data', 3)
+
+    ee.emit('signal', 2, 3)
+    ee.emit('end')
 }
