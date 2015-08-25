@@ -2,10 +2,10 @@ var rescuers = [], listeners = [], push = [].push
 
 function Delta (callback) {
     this._callback = callback
+    this._results = []
     this._waiting = 0
     this._completed = 0
     this._listeners = []
-    this._results = []
 }
 
 Delta.prototype.ee = function (ee) {
@@ -49,13 +49,16 @@ function Constructor (delta, ee) {
     } else {
         rescuer.delta = delta
     }
-    ee.on('error', rescuer.listener)
+
     delta._listeners.push({
         ee: ee,
         name: 'error',
         callback: rescuer,
         heap: rescuers
     })
+
+    ee.on('error', rescuer.listener)
+
     this._delta = delta
     this._ee = ee
 }
