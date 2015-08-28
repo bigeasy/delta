@@ -20,7 +20,8 @@ Delta.prototype._unlisten = function () {
     }
 }
 
-Delta.prototype._rescue = function (error) {
+Delta.prototype._rescue = function (error, ee) {
+    error.ee = ee
     this._unlisten()
     this._callback.call(null, error)
 }
@@ -41,13 +42,15 @@ function Constructor (delta, ee) {
     if (rescuer == null) {
         rescuer = {
             delta: delta,
+            ee: ee,
             listener: function (error) {
-                rescuer.delta._rescue(error)
+                rescuer.delta._rescue(error, rescuer.ee)
                 rescuers.push(rescuer)
             }
         }
     } else {
         rescuer.delta = delta
+        rescuer.ee = ee
     }
 
     delta._listeners.push({
