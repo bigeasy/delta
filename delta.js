@@ -33,6 +33,7 @@ Delta.prototype.off = function (ee, name, f) {
 Delta.prototype._unlisten = function () {
     for (var i = 0, I = this._listeners.length; i < I; i++) {
         var listener = this._listeners[i]
+        listener.callback.f = null
         listener.ee.removeListener(listener.name, listener.callback.listener)
         listener.heap.push(listener.callback)
     }
@@ -99,7 +100,6 @@ function invoke (vargs) {
     } catch (error) {
         this.delta._rescue(error)
     }
-    this.f = null
 }
 
 Constructor.prototype.on = function (name, reaction) {

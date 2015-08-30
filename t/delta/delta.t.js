@@ -1,4 +1,4 @@
-require('proof')(10, prove)
+require('proof')(11, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
@@ -24,6 +24,18 @@ function prove (assert) {
         throw new Error('wrapped')
     })
 
+    ee.emit('wrap', 1)
+
+    var count = 0
+    var delta = new Delta(function (error) { if (error) throw error })
+
+    delta.ee(ee).on('wrap', function (value) {
+        if (++count == 2) {
+            assert(true, 'handler called')
+        }
+    })
+
+    ee.emit('wrap', 1)
     ee.emit('wrap', 1)
 
     var delta = new Delta(function (error, one, two, three) {
