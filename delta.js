@@ -12,6 +12,24 @@ Delta.prototype.ee = function (ee) {
     return new Constructor(this, ee)
 }
 
+Delta.prototype.off = function (ee, name, f) {
+    var listeners = []
+    this._listeners.forEach(function (listener) {
+        if (
+            ee === listener.ee &&
+            listener.callback.action === invoke &&
+            (!name || name == listener.name) &&
+            (!f || f === listener.callback.f)
+        ) {
+            listener.ee.removeListener(listener.name, listener.callback.listener)
+            listener.heap.push(listener.callback)
+        } else {
+            listeners.push(listener)
+        }
+    })
+    this._listeners = listeners
+}
+
 Delta.prototype._unlisten = function () {
     for (var i = 0, I = this._listeners.length; i < I; i++) {
         var listener = this._listeners[i]
@@ -75,6 +93,15 @@ function get (vargs) {
     this.delta._complete()
 }
 
+function invoke (vargs) {
+    try {
+        this.f.apply(null, vargs)
+    } catch (error) {
+        this.delta._rescue(error)
+    }
+    this.f = null
+}
+
 Constructor.prototype.on = function (name, reaction) {
     var callback = listeners.pop()
 
@@ -83,6 +110,7 @@ Constructor.prototype.on = function (name, reaction) {
             delta: null,
             index: 0,
             action: null,
+            f: null,
             listener: function () {
                 var vargs = new Array
                 for (var i = 0, I = arguments.length; i < I; i++) {
@@ -97,15 +125,11 @@ Constructor.prototype.on = function (name, reaction) {
 
     if (Array.isArray(reaction)) {
         this._delta._results.push([[]])
+        callback.index = this._delta._results.length - 1
         callback.action = gather
     } else if (typeof reaction == 'function') {
-        callback.action = function (vargs) {
-            try {
-                reaction.apply(null, vargs)
-            } catch (error) {
-                this.delta._rescue(error)
-            }
-        }
+        callback.action = invoke
+        callback.f = reaction
     } else {
         this._delta._results.push([])
         this._delta._waiting++

@@ -1,4 +1,4 @@
-require('proof')(5, prove)
+require('proof')(10, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
@@ -39,4 +39,42 @@ function prove (assert) {
 
     ee.emit('signal', 2, 3)
     ee.emit('end')
+
+    var delta = new Delta(function (error, one, two) {
+        if (error) throw error
+        assert([ one, two ], [ 1, 2 ], 'off at ee level')
+    })
+    delta.ee(ee).on('data', panic).on('end')
+    delta.off(ee)
+    ee.emit('data', 1)
+    ee.emit('end', 1, 2)
+
+    var delta = new Delta(function (error, one, two) {
+        if (error) throw error
+        assert([ one, two ], [ 1, 2 ], 'off at name level')
+    })
+    delta.ee(ee).on('data', panic)
+                .on('other', function () { assert(true, 'other called') })
+                .on('end')
+    delta.off(ee, 'data')
+    ee.emit('data')
+    ee.emit('other')
+    ee.emit('end', 1, 2)
+
+    ee.emit('data')
+
+    var delta = new Delta(function (error, one, two) {
+        if (error) throw error
+        assert([ one, two ], [ 1, 2 ], 'off at method level')
+    })
+    delta.ee(ee).on('data', panic)
+                .on('data', function () { assert(true, 'other data called') })
+                .on('end')
+    delta.off(ee, 'data', panic)
+    ee.emit('data')
+    ee.emit('end', 1, 2)
+
+    function panic () {
+        throw new Error
+    }
 }
