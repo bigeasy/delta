@@ -17,16 +17,18 @@ Delta.prototype.off = function (ee, name, f) {
     this._listeners.forEach(function (listener) {
         if (
             ee === listener.ee &&
-            listener.callback.action === invoke &&
             (!name || name == listener.name) &&
             (!f || f === listener.callback.f)
         ) {
             listener.ee.removeListener(listener.name, listener.callback.listener)
             listener.heap.push(listener.callback)
+            if (listener.callback.action === get) {
+                this._complete()
+            }
         } else {
             listeners.push(listener)
         }
-    })
+    }, this)
     this._listeners = listeners
 }
 
