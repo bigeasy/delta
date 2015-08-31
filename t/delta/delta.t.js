@@ -54,7 +54,7 @@ function prove (assert) {
 
     var delta = new Delta(function (error, one, two) {
         if (error) throw error
-        assert([ one, two ], [ 1, 2 ], 'off at ee level')
+        assert(arguments.length, 0, 'all off')
     })
     delta.ee(ee).on('data', panic).on('end')
     delta.off(ee)
