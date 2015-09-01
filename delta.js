@@ -4,7 +4,6 @@ function Delta (callback) {
     this._callback = callback
     this._results = []
     this._waiting = 0
-    this._completed = 0
     this._listeners = []
 }
 
@@ -12,50 +11,55 @@ Delta.prototype.ee = function (ee) {
     return new Constructor(this, ee)
 }
 
+Delta.prototype._unlisten = function (listener) {
+    listener.f = null
+    listener.ee.removeListener(listener.name, listener.listener)
+    listener.heap.push(listener)
+}
+
 Delta.prototype.off = function (ee, name, f) {
-    var listeners = []
-    this._listeners.forEach(function (listener) {
+    var listeners = this._listeners, i = 0, I = listeners.length, listener
+    while (i < I) {
+        listener = listeners[i]
         if (
             ee === listener.ee &&
             (!name || name == listener.name) &&
-            (!f || f === listener.callback.f)
+            (!f || f === listener.f)
         ) {
-            listener.ee.removeListener(listener.name, listener.callback.listener)
-            listener.heap.push(listener.callback)
-            if (listener.callback.action === get) {
-                this._complete()
+            if (listener.action === get && !--this._waiting) {
+                this._done()
+                break
             }
+            this._unlisten(listener)
+            listeners.splice(i, 1)
+            I--
         } else {
-            listeners.push(listener)
+            i++
         }
-    }, this)
-    this._listeners = listeners
+    }
 }
 
-Delta.prototype._unlisten = function () {
-    for (var i = 0, I = this._listeners.length; i < I; i++) {
-        var listener = this._listeners[i]
-        listener.callback.f = null
-        listener.ee.removeListener(listener.name, listener.callback.listener)
-        listener.heap.push(listener.callback)
-    }
+function unlisten (listener) {
+    listener.f = null
+    listener.ee.removeListener(listener.name, listener.listener)
+    listener.heap.push(listener)
 }
 
 Delta.prototype._rescue = function (error, ee) {
     error.ee = ee
-    this._unlisten()
+    this._listeners.forEach(unlisten)
     this._callback.call(null, error)
 }
 
-Delta.prototype._complete = function () {
-    if (this._waiting == ++this._completed) {
-        this._unlisten()
-        var vargs = [ null ]
-        for (var i = 0, I = this._results.length; i < I; i++) {
-            push.apply(vargs, this._results[i])
-        }
-        this._callback.apply(null, vargs)
+Delta.prototype._done = function () {
+    var vargs = []
+    for (var i = 0, I = this._results.length; i < I; i++) {
+        push.apply(vargs, this._results[i])
     }
+    if (vargs.length) {
+        vargs.unshift(null)
+    }
+    this._callback.apply(null, vargs)
 }
 
 function Constructor (delta, ee) {
@@ -64,22 +68,19 @@ function Constructor (delta, ee) {
         rescuer = {
             delta: delta,
             ee: ee,
+            name: 'error',
             listener: function (error) {
                 rescuer.delta._rescue(error, rescuer.ee)
                 rescuers.push(rescuer)
-            }
+            },
+            heap: rescuers
         }
     } else {
         rescuer.delta = delta
         rescuer.ee = ee
     }
 
-    delta._listeners.push({
-        ee: ee,
-        name: 'error',
-        callback: rescuer,
-        heap: rescuers
-    })
+    delta._listeners.push(rescuer)
 
     ee.on('error', rescuer.listener)
 
@@ -93,7 +94,7 @@ function gather (vargs) {
 
 function get (vargs) {
     push.apply(this.delta._results[this.index], vargs)
-    this.delta._complete()
+    this.delta.off(this.ee, this.name)
 }
 
 function invoke (vargs) {
@@ -104,49 +105,49 @@ function invoke (vargs) {
     }
 }
 
-Constructor.prototype.on = function (name, reaction) {
-    var callback = listeners.pop()
+Constructor.prototype.on = function (name, object) {
+    var listener = listeners.pop()
 
-    if (callback == null) {
-        callback = {
-            delta: null,
-            index: 0,
+    if (listener == null) {
+        listener = {
+            delta: this,
+            ee: this._ee,
+            name: name,
             action: null,
+            listening: true,
+            index: 0,
             f: null,
             listener: function () {
                 var vargs = new Array
                 for (var i = 0, I = arguments.length; i < I; i++) {
                     vargs[i] = arguments[i]
                 }
-                callback.action(vargs)
-            }
+                listener.action(vargs)
+            },
+            heap: listeners
         }
     }
 
-    callback.delta = this._delta
+    listener.delta = this._delta
+    listener.ee = this._ee
+    listener.name = name
 
-    if (Array.isArray(reaction)) {
+    if (Array.isArray(object)) {
         this._delta._results.push([[]])
-        callback.index = this._delta._results.length - 1
-        callback.action = gather
-    } else if (typeof reaction == 'function') {
-        callback.action = invoke
-        callback.f = reaction
+        listener.index = this._delta._results.length - 1
+        listener.action = gather
+    } else if (typeof object == 'function') {
+        listener.action = invoke
+        listener.f = object
     } else {
         this._delta._results.push([])
         this._delta._waiting++
-        callback.index = this._delta._results.length - 1
-        callback.action = get
+        listener.index = this._delta._results.length - 1
+        listener.action = get
     }
 
-    this._delta._listeners.push({
-        ee: this._ee,
-        name: name,
-        callback: callback,
-        heap: listeners
-    })
-
-    this._ee.on(name, callback.listener)
+    this._delta._listeners.push(listener)
+    this._ee.on(name, listener.listener)
 
     return this
 }
