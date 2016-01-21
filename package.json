@@ -2,7 +2,7 @@
     "name":               "delta",
     "description":        "Translate EventEmitter events into an error-first callback result.",
     "author":             "Alan Gutierrez <alan@prettyrobots.com>",
-    "version":            "0.0.4",
+    "version":            "1.0.0",
     "keywords":
     [
                           "async", "asynchronous", "control", "flow", "loop",
