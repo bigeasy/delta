@@ -16,7 +16,7 @@ function prove (assert) {
     assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on error')
     assert(EventEmitter.listenerCount(ee, 'end'), 0, 'other listeners cleared on error')
 
-    var delta = new Delta(function (error) {
+    var delta = Delta(function (error) {
         assert(error.message, 'wrapped', 'caught event handler error')
     })
 

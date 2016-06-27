@@ -1,6 +1,9 @@
 var rescuers = [], listeners = [], push = [].push
 
 function Delta (callback) {
+    if (!(this instanceof Delta)) {
+        return new Delta(callback)
+    }
     this._callback = callback
     this._results = []
     this._waiting = 0
