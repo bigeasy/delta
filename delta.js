@@ -62,6 +62,7 @@ Delta.prototype._done = function () {
     if (vargs.length) {
         vargs.unshift(null)
     }
+    this._listeners.forEach(unlisten)
     this._callback.apply(null, vargs)
 }
 
