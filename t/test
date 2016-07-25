@@ -6,7 +6,7 @@ t/sizes delta.js | sed 's/^/    /'
 
 echo ""
 
-(proof run t/*/*.t.js | tee .proof.out | proof progress) || (proof errors < .proof.out) || exit 1
+(proof run t/*.t.js | tee .proof.out | proof progress) || (proof errors < .proof.out) || exit 1
 
 if [ "$TRAVIS" = "true" ] || [ "$MINIFY" = "true" ]; then
   # note: do not `--lift-vars` because it ruins arity functions by eliminating
@@ -17,7 +17,7 @@ if [ "$TRAVIS" = "true" ] || [ "$MINIFY" = "true" ]; then
   bak=delta-$(date +'%FT%T' | tr ':' '-').js
   mv delta.js $bak
   cat $bak | uglifyjs > delta.js
-  (proof run t/*/*.t.js | tee .proof.out | proof progress) || (proof errors < .proof.out) || exit 1
+  (proof run t/*.t.js | tee .proof.out | proof progress) || (proof errors < .proof.out) || exit 1
   cp $bak delta.js
 fi
 

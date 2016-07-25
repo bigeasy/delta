@@ -2,7 +2,7 @@ require('proof')(11, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
-    var Delta = require('../..')
+    var Delta = require('..')
 
     var delta = new Delta(function (error) {
         assert(error.message, 'errored', 'errored')

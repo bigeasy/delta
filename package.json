@@ -30,6 +30,6 @@
     "main":                 "delta",
     "scripts":
     {
-                            "test": "proof platform win32 && proof */*/*.t.js || t/test"
+                            "test": "proof platform win32 && proof */*.t.js || t/test"
     }
 }
