@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>delta.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>delta.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> rescuers = [], listeners = [], push = [].push
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Delta</span> (<span class="hljs-params">callback</span>) </span>{
+    <span class="hljs-keyword">if</span> (!(<span class="hljs-keyword">this</span> <span class="hljs-keyword">instanceof</span> Delta)) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Delta(callback)
+    }
+    <span class="hljs-keyword">this</span>._callback = callback
+    <span class="hljs-keyword">this</span>._results = []
+    <span class="hljs-keyword">this</span>._waiting = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">this</span>._listeners = []
+}
+
+Delta.prototype.ee = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">ee</span>) </span>{
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Constructor(<span class="hljs-keyword">this</span>, ee)
+}
+
+Delta.prototype._unlisten = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">listener</span>) </span>{
+    listener.f = <span class="hljs-literal">null</span>
+    listener.ee.removeListener(listener.name, listener.listener)
+    listener.heap.push(listener)
+}
+
+Delta.prototype.off = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">ee, name, f</span>) </span>{
+    <span class="hljs-keyword">var</span> listeners = <span class="hljs-keyword">this</span>._listeners, i = <span class="hljs-number">0</span>, I = listeners.length, listener
+    <span class="hljs-keyword">while</span> (i &lt; I) {
+        listener = listeners[i]
+        <span class="hljs-keyword">if</span> (
+            ee === listener.ee &amp;&amp;
+            (!name || name == listener.name) &amp;&amp;
+            (!f || f === listener.f)
+        ) {
+            <span class="hljs-keyword">if</span> (listener.action === get &amp;&amp; !--<span class="hljs-keyword">this</span>._waiting) {
+                <span class="hljs-keyword">this</span>._done()
+                <span class="hljs-keyword">break</span>
+            }
+            <span class="hljs-keyword">this</span>._unlisten(listener)
+            listeners.splice(i, <span class="hljs-number">1</span>)
+            I--
+        } <span class="hljs-keyword">else</span> {
+            i++
+        }
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">unlisten</span> (<span class="hljs-params">listener</span>) </span>{
+    listener.f = <span class="hljs-literal">null</span>
+    listener.ee.removeListener(listener.name, listener.listener)
+    listener.heap.push(listener)
+}
+
+Delta.prototype._rescue = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, ee</span>) </span>{
+    error.ee = ee
+    <span class="hljs-keyword">this</span>._listeners.forEach(unlisten)
+    <span class="hljs-keyword">this</span>._callback.call(<span class="hljs-literal">null</span>, error)
+}
+
+Delta.prototype._done = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">var</span> vargs = []
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>, I = <span class="hljs-keyword">this</span>._results.length; i &lt; I; i++) {
+        push.apply(vargs, <span class="hljs-keyword">this</span>._results[i])
+    }
+    <span class="hljs-keyword">if</span> (vargs.length) {
+        vargs.unshift(<span class="hljs-literal">null</span>)
+    }
+    <span class="hljs-keyword">this</span>._callback.apply(<span class="hljs-literal">null</span>, vargs)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Constructor</span> (<span class="hljs-params">delta, ee</span>) </span>{
+    <span class="hljs-keyword">var</span> rescuer = rescuers.pop()
+    <span class="hljs-keyword">if</span> (rescuer == <span class="hljs-literal">null</span>) {
+        rescuer = {
+            delta: delta,
+            ee: ee,
+            name: <span class="hljs-string">'error'</span>,
+            listener: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{
+                rescuer.delta._rescue(error, rescuer.ee)
+                rescuers.push(rescuer)
+            },
+            heap: rescuers
+        }
+    } <span class="hljs-keyword">else</span> {
+        rescuer.delta = delta
+        rescuer.ee = ee
+    }
+
+    delta._listeners.push(rescuer)
+
+    ee.on(<span class="hljs-string">'error'</span>, rescuer.listener)
+
+    <span class="hljs-keyword">this</span>._delta = delta
+    <span class="hljs-keyword">this</span>._ee = ee
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">gather</span> (<span class="hljs-params">vargs</span>) </span>{
+    push.apply(<span class="hljs-keyword">this</span>.delta._results[<span class="hljs-keyword">this</span>.index][<span class="hljs-number">0</span>], vargs)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">get</span> (<span class="hljs-params">vargs</span>) </span>{
+    push.apply(<span class="hljs-keyword">this</span>.delta._results[<span class="hljs-keyword">this</span>.index], vargs)
+    <span class="hljs-keyword">this</span>.delta.off(<span class="hljs-keyword">this</span>.ee, <span class="hljs-keyword">this</span>.name)
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">invoke</span> (<span class="hljs-params">vargs</span>) </span>{
+    <span class="hljs-keyword">try</span> {
+        <span class="hljs-keyword">this</span>.f.apply(<span class="hljs-literal">null</span>, vargs)
+    } <span class="hljs-keyword">catch</span> (error) {
+        <span class="hljs-keyword">this</span>.delta._rescue(error)
+    }
+}
+
+Constructor.prototype.on = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, object</span>) </span>{
+    <span class="hljs-keyword">var</span> listener = listeners.pop()
+
+    <span class="hljs-keyword">if</span> (listener == <span class="hljs-literal">null</span>) {
+        listener = {
+            delta: <span class="hljs-keyword">this</span>,
+            ee: <span class="hljs-keyword">this</span>._ee,
+            name: name,
+            action: <span class="hljs-literal">null</span>,
+            listening: <span class="hljs-literal">true</span>,
+            index: <span class="hljs-number">0</span>,
+            f: <span class="hljs-literal">null</span>,
+            listener: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">var</span> vargs = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Array</span>
+                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> i = <span class="hljs-number">0</span>, I = <span class="hljs-built_in">arguments</span>.length; i &lt; I; i++) {
+                    vargs[i] = <span class="hljs-built_in">arguments</span>[i]
+                }
+                listener.action(vargs)
+            },
+            heap: listeners
+        }
+    }
+
+    listener.delta = <span class="hljs-keyword">this</span>._delta
+    listener.ee = <span class="hljs-keyword">this</span>._ee
+    listener.name = name
+
+    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(object)) {
+        <span class="hljs-keyword">this</span>._delta._results.push([[]])
+        listener.index = <span class="hljs-keyword">this</span>._delta._results.length - <span class="hljs-number">1</span>
+        listener.action = gather
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> object == <span class="hljs-string">'function'</span>) {
+        listener.action = invoke
+        listener.f = objec
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">this</span>._delta._results.push([])
+        <span class="hljs-keyword">this</span>._delta._waiting++
+        listener.index = <span class="hljs-keyword">this</span>._delta._results.length - <span class="hljs-number">1</span>
+        listener.action = ge
+    }
+
+    <span class="hljs-keyword">this</span>._delta._listeners.push(listener)
+    <span class="hljs-keyword">this</span>._ee.on(name, listener.listener)
+
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>
+}
+
+Constructor.prototype.ee = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">ee</span>) </span>{
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Constructor(<span class="hljs-keyword">this</span>._delta, ee)
+}
+
+<span class="hljs-built_in">module</span>.exports = Delta
+
+</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>

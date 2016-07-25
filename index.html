@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>Arguable</title>
+<!--
+<link href='http://fonts.googleapis.com/css?family=Parisienne|Oxygen+Mono|PT+Mono|Offside|Nova+Mono|Averia+Serif+Libre|Alex+Brush|Autour+One|Share+Tech+Mono|Merriweather|Maven+Pro|Raleway' rel='stylesheet' type='text/css'>
+-->
+<!-- todo: why doesn't fork me float? -->
+<link href="http://fonts.googleapis.com/css?family=Alex+Brush|Oxygen+Mono|Offside|Raleway:400,700" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="css/syntax.css">
+<link rel="stylesheet" type="text/css" href="css/delta.css">
+<body><a href="https://github.com/bigeasy/delta/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a><div class="container">
+
+<div class="unit welcome">
+<h1>Delta</h1>
+</div>
+<!-- todo: code font is too small for body text font -->
+<div class="unit description markdown"><p>Funnel EventEmitter events into an error-first callback result.</p>
+<p>Delta is part of the <a href="https://github.com/bigeasy/cadence">Cadence</a> universe. The
+examples below use Cadence, but this would also be useful for programming in
+Streamline.js or other error-first callback domininate flow-control libraries.</p>
+<h2 id="delta-in-a-nutshell">Delta In a Nutshell</h2>
+<p>I use Delta to gather the results of <code>EventEmitter</code> objects and funnel them into
+an error-first callback.</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> delta = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;delta&apos;</span>), children = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;child_process&apos;</span>)
+
+<span class="hljs-keyword">var</span> ps = children.spawn(<span class="hljs-string">&apos;ps&apos;</span>, [ <span class="hljs-string">&apos;ax&apos;</span> ])
+
+<span class="hljs-keyword">var</span> delta = <span class="hljs-keyword">new</span> Delta(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, data, code</span>) </span>{
+    <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error
+    <span class="hljs-keyword">if</span> (code != <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&apos;ps failed&apos;</span>)
+    }
+    <span class="hljs-keyword">return</span> stdout.join(<span class="hljs-string">&apos;&apos;</span>).split(<span class="hljs-regexp">/\n/</span>).length - <span class="hljs-number">2</span>
+})
+
+delta.ee(ps.stdout).on(<span class="hljs-string">&apos;data&apos;</span>, [])
+     .ee(ps.stderr).on(<span class="hljs-string">&apos;data&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) </span>{
+         <span class="hljs-built_in">console</span>.error(chunk.toString())
+     })
+     .ee(ps).on(<span class="hljs-string">&apos;close&apos;</span>)
+</code></pre>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> children = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;child_process&apos;</span>), cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;cadence&apos;</span>)
+
+<span class="hljs-keyword">var</span> processCount = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async</span>) </span>{
+    <span class="hljs-keyword">var</span> ps = children.spawn(<span class="hljs-string">&apos;ps&apos;</span>, [ <span class="hljs-string">&apos;ax&apos;</span> ])
+    <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">new</span> Delta(<span class="hljs-keyword">async</span>())
+                .ee(ps.stdout).on(<span class="hljs-string">&apos;data&apos;</span>, [])
+                .ee(ps.stderr).on(<span class="hljs-string">&apos;data&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) </span>{
+                    <span class="hljs-built_in">console</span>.error(chunk.toString())
+                })
+                .ee(ps).on(<span class="hljs-string">&apos;close&apos;</span>)
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stdout, code</span>) </span>{
+        <span class="hljs-keyword">if</span> (code != <span class="hljs-number">0</span>) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&apos;ps failed&apos;</span>)
+        }
+        <span class="hljs-keyword">return</span> stdout.join(<span class="hljs-string">&apos;&apos;</span>).split(<span class="hljs-regexp">/\n/</span>).length - <span class="hljs-number">2</span>
+    })
+})
+
+processCount(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error, count</span>) </span>{
+    <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;processes: &apos;</span> + count)
+})
+</code></pre>
+<p>It is complicated, but not really. Let&apos;s look closer at the <code>processCount</code>
+function to see all the ways in which <code>Delta</code> gathers an <code>EventEmitter</code>.</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> processCount = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async</span>) </span>{
+    <span class="hljs-comment">// run `ps`</span>
+    <span class="hljs-keyword">var</span> ps = children.spawn(<span class="hljs-string">&apos;ps&apos;</span>, [ <span class="hljs-string">&apos;ax&apos;</span> ])
+
+    <span class="hljs-comment">// gather the output from `ps` and wait for it to finish, count the lines to</span>
+    <span class="hljs-comment">// count the number of processes running on this machine.</span>
+    <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        <span class="hljs-comment">// wrap a callback in a `Delta` object, the results from the</span>
+        <span class="hljs-comment">// `EventEmitter` are fed to the callback.</span>
+        <span class="hljs-keyword">var</span> delta = <span class="hljs-keyword">new</span> Delta(<span class="hljs-keyword">async</span>())
+
+        <span class="hljs-comment">// gather stdout into an array, the first argument to the callback.</span>
+        delta.ee(ps.stdout).on(<span class="hljs-string">&apos;data&apos;</span>, [])
+
+        <span class="hljs-comment">// set a handler for stderr, no argument is passed to the callback.</span>
+        delta.ee(ps.stderr).on(<span class="hljs-string">&apos;data&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) </span>{
+            <span class="hljs-built_in">console</span>.error(chunk.toString())
+        })
+
+        <span class="hljs-comment">// wait for the process to close, the code and signal are passed to the</span>
+        <span class="hljs-comment">// callback.</span>
+        delta.ee(ps).on(<span class="hljs-string">&apos;close&apos;</span>)
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stdout, code</span>) </span>{
+        <span class="hljs-keyword">if</span> (code != <span class="hljs-number">0</span>) {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&apos;ps failed&apos;</span>)
+        }
+        <span class="hljs-keyword">return</span> stdout.join(<span class="hljs-string">&apos;&apos;</span>).split(<span class="hljs-regexp">/\n/</span>).length - <span class="hljs-number">2</span>
+    })
+})
+</code></pre>
+</div>
+
+</div></body>
+<!-- todo: move into an edify plugin -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-20388260-3', 'bigeasy.github.io');
+ga('send', 'pageview');
+</script>
+</html>
