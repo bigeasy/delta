@@ -1,4 +1,4 @@
-require('proof')(11, prove)
+require('proof/redux')(11, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
