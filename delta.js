@@ -8,6 +8,7 @@ function Delta (callback) {
     this._results = []
     this._waiting = 0
     this._listeners = []
+    this._completed = false
 }
 
 Delta.prototype.ee = function (ee) {
@@ -43,8 +44,11 @@ Delta.prototype.off = function (ee, name, f) {
 }
 
 Delta.prototype.cancel = function (vargs) {
-    this._listeners.forEach(unlisten)
-    this._callback.apply(null, vargs)
+    if (!this._completed) {
+        this._listeners.forEach(unlisten)
+        this._callback.apply(null, vargs)
+        this._completed = true
+    }
 }
 
 function unlisten (listener) {
@@ -69,6 +73,7 @@ Delta.prototype._done = function () {
     }
     this._listeners.forEach(unlisten)
     this._callback.apply(null, vargs)
+    this._completed = true
 }
 
 function Constructor (delta, ee) {
