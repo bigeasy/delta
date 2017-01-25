@@ -42,6 +42,11 @@ Delta.prototype.off = function (ee, name, f) {
     }
 }
 
+Delta.prototype.cancel = function (vargs) {
+    this._listeners.forEach(unlisten)
+    this._callback.apply(null, vargs)
+}
+
 function unlisten (listener) {
     listener.f = null
     listener.ee.removeListener(listener.name, listener.listener)
@@ -158,6 +163,10 @@ Constructor.prototype.on = function (name, object) {
 
 Constructor.prototype.ee = function (ee) {
     return new Constructor(this._delta, ee)
+}
+
+Constructor.prototype.cancel = function (vargs) {
+    this._delta.cancel(vargs)
 }
 
 module.exports = Delta

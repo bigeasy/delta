@@ -1,4 +1,4 @@
-require('proof/redux')(11, prove)
+require('proof/redux')(12, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
@@ -89,4 +89,9 @@ function prove (assert) {
     function panic () {
         throw new Error
     }
+
+    var delta = new Delta(function (error, value) {
+        assert(value, 1, 'value')
+    }).ee(ee).on('end')
+    delta.cancel([ null, 1 ])
 }
