@@ -94,4 +94,6 @@ function prove (assert) {
         assert(value, 1, 'value')
     }).ee(ee).on('end')
     delta.cancel([ null, 1 ])
+
+    delta.cancel([ null, 1 ])
 }

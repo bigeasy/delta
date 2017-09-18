@@ -1,4 +1,5 @@
 var rescuers = [], listeners = [], push = [].push
+var assert = require('assert')
 
 function Delta (callback) {
     if (!(this instanceof Delta)) {
@@ -8,6 +9,7 @@ function Delta (callback) {
     this._results = []
     this._waiting = 0
     this._listeners = []
+    this._completed = false
 }
 
 Delta.prototype.ee = function (ee) {
@@ -15,6 +17,7 @@ Delta.prototype.ee = function (ee) {
 }
 
 Delta.prototype._unlisten = function (listener) {
+    assert(listener.delta === this)
     listener.f = null
     listener.ee.removeListener(listener.name, listener.listener)
     listener.heap.push(listener)
@@ -43,8 +46,12 @@ Delta.prototype.off = function (ee, name, f) {
 }
 
 Delta.prototype.cancel = function (vargs) {
-    this._listeners.forEach(unlisten)
-    this._callback.apply(null, vargs)
+    if (!this._completed) {
+        this._listeners.forEach(unlisten)
+        this._listeners.length = 0
+        this._callback.apply(null, vargs)
+        this._completed = true
+    }
 }
 
 function unlisten (listener) {
@@ -56,6 +63,7 @@ function unlisten (listener) {
 Delta.prototype._rescue = function (error, ee) {
     error.ee = ee
     this._listeners.forEach(unlisten)
+    this._listeners.length = 0
     this._callback.call(null, error)
 }
 
@@ -68,7 +76,9 @@ Delta.prototype._done = function () {
         vargs.unshift(null)
     }
     this._listeners.forEach(unlisten)
+    this._listeners.length = 0
     this._callback.apply(null, vargs)
+    this._completed = true
 }
 
 function Constructor (delta, ee) {
