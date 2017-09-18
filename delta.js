@@ -1,5 +1,4 @@
 var rescuers = [], listeners = [], push = [].push
-var assert = require('assert')
 
 function Delta (callback) {
     if (!(this instanceof Delta)) {
@@ -17,7 +16,6 @@ Delta.prototype.ee = function (ee) {
 }
 
 Delta.prototype._unlisten = function (listener) {
-    assert(listener.delta === this)
     listener.f = null
     listener.ee.removeListener(listener.name, listener.listener)
     listener.heap.push(listener)
