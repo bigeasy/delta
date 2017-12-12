@@ -7,8 +7,8 @@
 
     "keywords":
     [
-                            "async", "asynchronous", "control", "flow", "loop",
-                            "micro-js", "step", "callback"
+                            "cadence", "async", "asynchronous", "control",
+                            "flow", "loop", "micro-js", "step", "callback"
     ],
     "author":               "Alan Gutierrez <alan@prettyrobots.com>",
     "homepage":             "http://bigeasy.github.com/delta",
