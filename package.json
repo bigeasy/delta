@@ -16,7 +16,7 @@
     "license":              "MIT",
     "repository":
     {
-                            "url": "git://github.com/bigeasy/delta.git",
+                            "url": "bigeasy/delta",
                             "type": "git"
     },
     "dependencies":
