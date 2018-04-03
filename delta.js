@@ -1,4 +1,5 @@
 var rescuers = [], listeners = [], push = [].push
+var events = require('events')
 
 function Delta (callback) {
     if (!(this instanceof Delta)) {
@@ -9,6 +10,7 @@ function Delta (callback) {
     this._waiting = 0
     this._listeners = []
     this._completed = false
+    this._canceled = 0
 }
 
 Delta.prototype.ee = function (ee) {
@@ -45,6 +47,7 @@ Delta.prototype.off = function (ee, name, f) {
 
 Delta.prototype.cancel = function (vargs) {
     if (!this._completed) {
+        this._canceled++
         this._listeners.forEach(unlisten)
         this._listeners.length = 0
         this._callback.apply(null, vargs)
@@ -53,9 +56,23 @@ Delta.prototype.cancel = function (vargs) {
 }
 
 function unlisten (listener) {
-    listener.f = null
-    listener.ee.removeListener(listener.name, listener.listener)
-    listener.heap.push(listener)
+    if (listener.ee != null || typeof listener.ee.removeListener == 'function') {
+        listener.f = null
+        listener.ee.removeListener(listener.name, listener.listener)
+        listener.heap.push(listener)
+    } else {
+        var stackTraceLimit = Error.stackTraceLimit
+        Error.stackTraceLimit = Infinity
+        console.log(new Error().stack)
+        Error.stackTraceLimit = stackTraceLimit
+        console.log(listener)
+        console.log(listener.ee)
+        console.log(typeof listener.ee)
+        console.log(listener.ee instanceof events.EventEmitter)
+        if (listener.ee != null && typeof listener.ee == 'object') {
+            console.log(listener.ee.constructor.name)
+        }
+    }
 }
 
 Delta.prototype._rescue = function (error, ee) {
