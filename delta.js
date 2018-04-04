@@ -11,16 +11,18 @@ function Delta (callback) {
     this._listeners = []
     this._completed = false
     this._canceled = 0
+    this._instance = INSTANCE++
 }
 
 Delta.prototype.ee = function (ee) {
     return new Constructor(this, ee)
 }
 
-Delta.prototype._unlisten = function (listener) {
-    listener.f = null
-    listener.ee.removeListener(listener.name, listener.listener)
-    listener.heap.push(listener)
+Delta.prototype._unlisten = function () {
+    this._listeners.forEach(function (listener) {
+        unlisten(listener, this)
+    }, this)
+    this._listeners.length = 0
 }
 
 Delta.prototype.off = function (ee, name, f) {
@@ -36,7 +38,7 @@ Delta.prototype.off = function (ee, name, f) {
                 this._done()
                 break
             }
-            this._unlisten(listener)
+            unlisten(listener, this)
             listeners.splice(i, 1)
             I--
         } else {
@@ -55,30 +57,32 @@ Delta.prototype.cancel = function (vargs) {
     }
 }
 
-function unlisten (listener) {
+function unlisten (listener, delta) {
     if (listener.ee != null || typeof listener.ee.removeListener == 'function') {
         listener.f = null
         listener.ee.removeListener(listener.name, listener.listener)
         listener.heap.push(listener)
     } else {
+        console.log('no removeListener')
         var stackTraceLimit = Error.stackTraceLimit
         Error.stackTraceLimit = Infinity
         console.log(new Error().stack)
         Error.stackTraceLimit = stackTraceLimit
+        console.log('delta replaced', delta === listener.delta)
         console.log(listener)
         console.log(listener.ee)
         console.log(typeof listener.ee)
         console.log(listener.ee instanceof events.EventEmitter)
         if (listener.ee != null && typeof listener.ee == 'object') {
             console.log(listener.ee.constructor.name)
+            console.log(listener.ee)
         }
     }
 }
 
 Delta.prototype._rescue = function (error, ee) {
     error.ee = ee
-    this._listeners.forEach(unlisten)
-    this._listeners.length = 0
+    this._unlisten()
     this._callback.call(null, error)
 }
 
@@ -90,16 +94,20 @@ Delta.prototype._done = function () {
     if (vargs.length) {
         vargs.unshift(null)
     }
-    this._listeners.forEach(unlisten)
-    this._listeners.length = 0
+    this._unlisten()
     this._callback.apply(null, vargs)
     this._completed = true
 }
 
+var INSTANCE = 0
+
 function Constructor (delta, ee) {
+    this._instance = INSTANCE++
+
     var rescuer = rescuers.pop()
     if (rescuer == null) {
         rescuer = {
+            instance: this._instance,
             delta: delta,
             ee: ee,
             name: 'error',
@@ -112,6 +120,7 @@ function Constructor (delta, ee) {
     } else {
         rescuer.delta = delta
         rescuer.ee = ee
+        rescuer.instance = this._instance
     }
 
     delta._listeners.push(rescuer)
@@ -144,6 +153,7 @@ Constructor.prototype.on = function (name, object) {
 
     if (listener == null) {
         listener = {
+            instance: this._instance,
             delta: this,
             ee: this._ee,
             name: name,
@@ -165,6 +175,7 @@ Constructor.prototype.on = function (name, object) {
     listener.delta = this._delta
     listener.ee = this._ee
     listener.name = name
+    listener.instance = this._instance
 
     if (Array.isArray(object)) {
         this._delta._results.push([[]])
