@@ -102,12 +102,10 @@ Delta.prototype._done = function () {
 var INSTANCE = 0
 
 function Constructor (delta, ee) {
-    this._instance = INSTANCE++
-
     var rescuer = rescuers.pop()
     if (rescuer == null) {
         rescuer = {
-            instance: this._instance,
+            instance: delta._instance,
             delta: delta,
             ee: ee,
             name: 'error',
@@ -120,7 +118,7 @@ function Constructor (delta, ee) {
     } else {
         rescuer.delta = delta
         rescuer.ee = ee
-        rescuer.instance = this._instance
+        rescuer.instance = delta._instance
     }
 
     delta._listeners.push(rescuer)
@@ -153,8 +151,8 @@ Constructor.prototype.on = function (name, object) {
 
     if (listener == null) {
         listener = {
-            instance: this._instance,
-            delta: this,
+            instance: this._delta._instance,
+            delta: this._delta,
             ee: this._ee,
             name: name,
             action: null,
@@ -175,7 +173,7 @@ Constructor.prototype.on = function (name, object) {
     listener.delta = this._delta
     listener.ee = this._ee
     listener.name = name
-    listener.instance = this._instance
+    listener.instance = this._delta._instance
 
     if (Array.isArray(object)) {
         this._delta._results.push([[]])
