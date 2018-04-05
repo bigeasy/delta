@@ -1,4 +1,4 @@
-require('proof')(12, prove)
+require('proof')(15, prove)
 
 function prove (assert) {
     var EventEmitter = require('events').EventEmitter
@@ -33,10 +33,14 @@ function prove (assert) {
         if (++count == 2) {
             assert(true, 'handler called')
         }
-    })
+    }).on('end')
 
     ee.emit('wrap', 1)
     ee.emit('wrap', 1)
+
+    ee.emit('end')
+
+    assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on end')
 
     var delta = new Delta(function (error, one, two, three) {
         if (error) throw error
@@ -94,6 +98,9 @@ function prove (assert) {
         assert(value, 1, 'value')
     }).ee(ee).on('end')
     delta.cancel([ null, 1 ])
+
+    assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on cancel')
+    assert(EventEmitter.listenerCount(ee, 'end'), 0, 'regular listeners cleared on cancel')
 
     delta.cancel([ null, 1 ])
 }

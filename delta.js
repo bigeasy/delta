@@ -49,11 +49,10 @@ Delta.prototype.off = function (ee, name, f) {
 
 Delta.prototype.cancel = function (vargs) {
     if (!this._completed) {
-        this._canceled++
-        this._listeners.forEach(unlisten)
-        this._listeners.length = 0
-        this._callback.apply(null, vargs)
         this._completed = true
+        this._canceled++
+        this._unlisten()
+        this._callback.apply(null, vargs)
     }
 }
 
