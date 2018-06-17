@@ -57,26 +57,9 @@ Delta.prototype.cancel = function (vargs) {
 }
 
 function unlisten (listener, delta) {
-    if (listener.ee != null || typeof listener.ee.removeListener == 'function') {
-        listener.f = null
-        listener.ee.removeListener(listener.name, listener.listener)
-        listener.heap.push(listener)
-    } else {
-        console.log('no removeListener')
-        var stackTraceLimit = Error.stackTraceLimit
-        Error.stackTraceLimit = Infinity
-        console.log(new Error().stack)
-        Error.stackTraceLimit = stackTraceLimit
-        console.log('delta replaced', delta === listener.delta)
-        console.log(listener)
-        console.log(listener.ee)
-        console.log(typeof listener.ee)
-        console.log(listener.ee instanceof events.EventEmitter)
-        if (listener.ee != null && typeof listener.ee == 'object') {
-            console.log(listener.ee.constructor.name)
-            console.log(listener.ee)
-        }
-    }
+    listener.f = null
+    listener.ee.removeListener(listener.name, listener.listener)
+    listener.heap.push(listener)
 }
 
 Delta.prototype._rescue = function (error, ee) {
