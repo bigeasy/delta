@@ -31,7 +31,7 @@ Delta.prototype.off = function (ee, name, f) {
             (!name || name == listener.name) &&
             (!f || f === listener.f)
         ) {
-            if (listener.action === get && !--this._waiting) {
+            if (listener.action === 'get' && !--this._waiting) {
                 this._done()
                 break
             }
@@ -94,56 +94,48 @@ function Constructor (delta, ee) {
     this._ee = ee
 }
 
-function gather (vargs) {
-    push.apply(this.delta._results[this.index][0], vargs)
-}
-
-function get (vargs) {
-    push.apply(this.delta._results[this.index], vargs)
-    this.delta.off(this.ee, this.name)
-}
-
-function invoke (vargs) {
-    try {
-        this.f.apply(null, vargs)
-    } catch (error) {
-        this.delta._rescue(error)
-    }
-}
-
 Constructor.prototype.on = function (name, object) {
-    var listener = {
-        delta: this._delta,
-        ee: this._ee,
-        name: name,
-        action: null,
-        index: 0,
-        f: null,
-        listener: function () {
-            var vargs = new Array
-            for (var i = 0, I = arguments.length; i < I; i++) {
-                vargs[i] = arguments[i]
+    var delta = this._delta, ee = this._ee
+    var action = null, listener = null, index = null, f = null
+
+    if (Array.isArray(object)) {
+        action = 'gather'
+        delta._results.push([[]])
+        index = delta._results.length - 1
+        listener = function () {
+            push.apply(delta._results[index][0], arguments)
+        }
+    } else if (typeof object == 'function') {
+        action = 'invoke'
+        f = object
+        listener = function () {
+            try {
+                object.apply(null, arguments)
+            } catch (error) {
+                delta._rescue(error)
             }
-            listener.action(vargs)
+        }
+    } else {
+        action = 'get'
+        index = delta._results.length
+        delta._results.push([])
+        delta._waiting++
+        listener = function () {
+            push.apply(delta._results[index], arguments)
+            delta.off(ee, name)
         }
     }
 
-    if (Array.isArray(object)) {
-        this._delta._results.push([[]])
-        listener.index = this._delta._results.length - 1
-        listener.action = gather
-    } else if (typeof object == 'function') {
-        listener.action = invoke
-        listener.f = object
-    } else {
-        this._delta._results.push([])
-        this._delta._waiting++
-        listener.index = this._delta._results.length - 1
-        listener.action = get
-    }
-
-    this._delta._listeners.push(listener)
-    this._ee.on(name, listener.listener)
+    this._delta._listeners.push({
+        delta: delta,
+        ee: ee,
+        name: name,
+        action: action,
+        listener: listener,
+        index: index,
+        f: f
+    })
+    this._ee.on(name, listener)
 
     return this
 }

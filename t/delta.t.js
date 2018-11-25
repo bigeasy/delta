@@ -4,7 +4,7 @@ function prove (okay) {
     var EventEmitter = require('events').EventEmitter
     var Delta = require('..')
 
-    var delta = new Delta(function (error) {
+    var delta = Delta(function (error) {
         okay(error.message, 'errored', 'errored')
     })
 
@@ -27,7 +27,7 @@ function prove (okay) {
     ee.emit('wrap', 1)
 
     var count = 0
-    var delta = new Delta(function (error) { if (error) throw error })
+    var delta = Delta(function (error) { if (error) throw error })
 
     delta.ee(ee).on('wrap', function (value) {
         if (++count == 2) {
@@ -42,7 +42,7 @@ function prove (okay) {
 
     okay(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on end')
 
-    var delta = new Delta(function (error, one, two, three) {
+    var delta = Delta(function (error, one, two, three) {
         if (error) throw error
         okay([ one, two, three ], [ [ 1, 2, 3 ], 2, 3 ], 'gathered')
     })
@@ -56,7 +56,7 @@ function prove (okay) {
     ee.emit('signal', 2, 3)
     ee.emit('end')
 
-    var delta = new Delta(function (error, one, two) {
+    var delta = Delta(function (error, one, two) {
         if (error) throw error
         okay(arguments.length, 0, 'all off')
     })
@@ -65,7 +65,7 @@ function prove (okay) {
     ee.emit('data', 1)
     ee.emit('end', 1, 2)
 
-    var delta = new Delta(function (error, one, two) {
+    var delta = Delta(function (error, one, two) {
         if (error) throw error
         okay([ one, two ], [ 1, 2 ], 'off at name level')
     })
@@ -79,7 +79,7 @@ function prove (okay) {
 
     ee.emit('data')
 
-    var delta = new Delta(function (error, one, two) {
+    var delta = Delta(function (error, one, two) {
         if (error) throw error
         okay([ one, two ], [ 1, 2 ], 'off at method level')
     })
@@ -94,7 +94,7 @@ function prove (okay) {
         throw new Error
     }
 
-    var delta = new Delta(function (error, value) {
+    var delta = Delta(function (error, value) {
         okay(value, 1, 'value')
     }).ee(ee).on('end')
     delta.cancel([ null, 1 ])

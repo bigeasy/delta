@@ -1,9 +1,6 @@
 var push = [].push
 
 function Delta (callback) {
-    if (!(this instanceof Delta)) {
-        return new Delta(callback)
-    }
     this._callback = callback
     this._results = []
     this._waiting = 0
@@ -148,4 +145,4 @@ Constructor.prototype.cancel = function (vargs) {
     this._delta.cancel(vargs)
 }
 
-module.exports = Delta
+module.exports = function (callback) { return new Delta(callback) }
