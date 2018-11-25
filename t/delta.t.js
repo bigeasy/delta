@@ -1,11 +1,11 @@
 require('proof')(15, prove)
 
-function prove (assert) {
+function prove (okay) {
     var EventEmitter = require('events').EventEmitter
     var Delta = require('..')
 
     var delta = new Delta(function (error) {
-        assert(error.message, 'errored', 'errored')
+        okay(error.message, 'errored', 'errored')
     })
 
     var ee = new EventEmitter
@@ -13,11 +13,11 @@ function prove (assert) {
 
     ee.emit('error', new Error('errored'))
 
-    assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on error')
-    assert(EventEmitter.listenerCount(ee, 'end'), 0, 'other listeners cleared on error')
+    okay(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on error')
+    okay(EventEmitter.listenerCount(ee, 'end'), 0, 'other listeners cleared on error')
 
     var delta = Delta(function (error) {
-        assert(error.message, 'wrapped', 'caught event handler error')
+        okay(error.message, 'wrapped', 'caught event handler error')
     })
 
     delta.ee(ee).on('wrap', function (value) {
@@ -31,7 +31,7 @@ function prove (assert) {
 
     delta.ee(ee).on('wrap', function (value) {
         if (++count == 2) {
-            assert(true, 'handler called')
+            okay('handler called')
         }
     }).on('end')
 
@@ -40,11 +40,11 @@ function prove (assert) {
 
     ee.emit('end')
 
-    assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on end')
+    okay(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on end')
 
     var delta = new Delta(function (error, one, two, three) {
         if (error) throw error
-        assert([ one, two, three ], [ [ 1, 2, 3 ], 2, 3 ], 'gathered')
+        okay([ one, two, three ], [ [ 1, 2, 3 ], 2, 3 ], 'gathered')
     })
 
     delta.ee(new EventEmitter).ee(ee).on('data', []).on('end').on('signal')
@@ -58,7 +58,7 @@ function prove (assert) {
 
     var delta = new Delta(function (error, one, two) {
         if (error) throw error
-        assert(arguments.length, 0, 'all off')
+        okay(arguments.length, 0, 'all off')
     })
     delta.ee(ee).on('data', panic).on('end')
     delta.off(ee)
@@ -67,10 +67,10 @@ function prove (assert) {
 
     var delta = new Delta(function (error, one, two) {
         if (error) throw error
-        assert([ one, two ], [ 1, 2 ], 'off at name level')
+        okay([ one, two ], [ 1, 2 ], 'off at name level')
     })
     delta.ee(ee).on('data', panic)
-                .on('other', function () { assert(true, 'other called') })
+                .on('other', function () { okay('other called') })
                 .on('end')
     delta.off(ee, 'data')
     ee.emit('data')
@@ -81,10 +81,10 @@ function prove (assert) {
 
     var delta = new Delta(function (error, one, two) {
         if (error) throw error
-        assert([ one, two ], [ 1, 2 ], 'off at method level')
+        okay([ one, two ], [ 1, 2 ], 'off at method level')
     })
     delta.ee(ee).on('data', panic)
-                .on('data', function () { assert(true, 'other data called') })
+                .on('data', function () { okay('other data called') })
                 .on('end')
     delta.off(ee, 'data', panic)
     ee.emit('data')
@@ -95,12 +95,12 @@ function prove (assert) {
     }
 
     var delta = new Delta(function (error, value) {
-        assert(value, 1, 'value')
+        okay(value, 1, 'value')
     }).ee(ee).on('end')
     delta.cancel([ null, 1 ])
 
-    assert(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on cancel')
-    assert(EventEmitter.listenerCount(ee, 'end'), 0, 'regular listeners cleared on cancel')
+    okay(EventEmitter.listenerCount(ee, 'error'), 0, 'error listeners cleared on cancel')
+    okay(EventEmitter.listenerCount(ee, 'end'), 0, 'regular listeners cleared on cancel')
 
     delta.cancel([ null, 1 ])
 }
