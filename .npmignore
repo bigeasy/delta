@@ -1,5 +1,7 @@
 /.*
 /*.md
+/benchmark
+/_delta.js
 /coverage
 /docs
 /t
