@@ -1,5 +1,4 @@
-var rescuers = [], listeners = [], push = [].push
-var events = require('events')
+var push = [].push
 
 function Delta (callback) {
     if (!(this instanceof Delta)) {
@@ -59,7 +58,7 @@ Delta.prototype.cancel = function (vargs) {
 function unlisten (listener, delta) {
     listener.f = null
     listener.ee.removeListener(listener.name, listener.listener)
-    listener.heap.push(listener)
+//    listener.heap.push(listener)
 }
 
 Delta.prototype._rescue = function (error, ee) {
@@ -84,23 +83,14 @@ Delta.prototype._done = function () {
 var INSTANCE = 0
 
 function Constructor (delta, ee) {
-    var rescuer = rescuers.pop()
-    if (rescuer == null) {
-        rescuer = {
-            instance: delta._instance,
-            delta: delta,
-            ee: ee,
-            name: 'error',
-            listener: function (error) {
-                rescuer.delta._rescue(error, rescuer.ee)
-                rescuers.push(rescuer)
-            },
-            heap: rescuers
+    var rescuer = {
+        instance: delta._instance,
+        delta: delta,
+        ee: ee,
+        name: 'error',
+        listener: function (error) {
+            rescuer.delta._rescue(error, rescuer.ee)
         }
-    } else {
-        rescuer.delta = delta
-        rescuer.ee = ee
-        rescuer.instance = delta._instance
     }
 
     delta._listeners.push(rescuer)
@@ -129,33 +119,23 @@ function invoke (vargs) {
 }
 
 Constructor.prototype.on = function (name, object) {
-    var listener = listeners.pop()
-
-    if (listener == null) {
-        listener = {
-            instance: this._delta._instance,
-            delta: this._delta,
-            ee: this._ee,
-            name: name,
-            action: null,
-            listening: true,
-            index: 0,
-            f: null,
-            listener: function () {
-                var vargs = new Array
-                for (var i = 0, I = arguments.length; i < I; i++) {
-                    vargs[i] = arguments[i]
-                }
-                listener.action(vargs)
-            },
-            heap: listeners
+    var listener = {
+        instance: this._delta._instance,
+        delta: this._delta,
+        ee: this._ee,
+        name: name,
+        action: null,
+        listening: true,
+        index: 0,
+        f: null,
+        listener: function () {
+            var vargs = new Array
+            for (var i = 0, I = arguments.length; i < I; i++) {
+                vargs[i] = arguments[i]
+            }
+            listener.action(vargs)
         }
     }
-
-    listener.delta = this._delta
-    listener.ee = this._ee
-    listener.name = name
-    listener.instance = this._delta._instance
 
     if (Array.isArray(object)) {
         this._delta._results.push([[]])
