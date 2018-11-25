@@ -9,7 +9,6 @@ function Delta (callback) {
     this._waiting = 0
     this._listeners = []
     this._completed = false
-    this._canceled = 0
 }
 
 Delta.prototype.ee = function (ee) {
@@ -48,7 +47,6 @@ Delta.prototype.off = function (ee, name, f) {
 Delta.prototype.cancel = function (vargs) {
     if (!this._completed) {
         this._completed = true
-        this._canceled++
         this._unlisten()
         this._callback.apply(null, vargs)
     }
