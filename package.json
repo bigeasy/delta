@@ -1,6 +1,6 @@
 {
     "name":                 "delta",
-    "version":              "1.4.2",
+    "version":              "2.0.0",
     "description":
 
       "Translate EventEmitter events into an error-first callback result.",
