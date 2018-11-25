@@ -58,7 +58,6 @@ Delta.prototype.cancel = function (vargs) {
 function unlisten (listener, delta) {
     listener.f = null
     listener.ee.removeListener(listener.name, listener.listener)
-//    listener.heap.push(listener)
 }
 
 Delta.prototype._rescue = function (error, ee) {
@@ -125,7 +124,6 @@ Constructor.prototype.on = function (name, object) {
         ee: this._ee,
         name: name,
         action: null,
-        listening: true,
         index: 0,
         f: null,
         listener: function () {
