@@ -10,7 +10,6 @@ function Delta (callback) {
     this._listeners = []
     this._completed = false
     this._canceled = 0
-    this._instance = INSTANCE++
 }
 
 Delta.prototype.ee = function (ee) {
@@ -79,11 +78,8 @@ Delta.prototype._done = function () {
     this._completed = true
 }
 
-var INSTANCE = 0
-
 function Constructor (delta, ee) {
     var rescuer = {
-        instance: delta._instance,
         delta: delta,
         ee: ee,
         name: 'error',
@@ -119,7 +115,6 @@ function invoke (vargs) {
 
 Constructor.prototype.on = function (name, object) {
     var listener = {
-        instance: this._delta._instance,
         delta: this._delta,
         ee: this._ee,
         name: name,
